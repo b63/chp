@@ -1,6 +1,30 @@
 'use strict';
+const _WORD = 5;
+const _MASK = (1 << _WORD)-1;
+
+const PAULI_PROD = [
+    // bit format: x1 z1 x2 z2
+           0,    // II
+           0,    // IZ
+           0,    // IX
+           0,    // IY
+           0,    // ZI
+           0,    // ZZ
+           1,    // ZX
+           3,    // ZY
+           0,    // XI
+           3,    // XZ
+           0,    // XX
+           1,    // XY
+           0,    // YI
+           1,    // YZ
+           3,    // YX
+           0,    // YY
+        ];
+const SYMBOLS_I = ['+', 'i', '-', '-i'];
+
 class Tableau {
-    static WORD = 5;
+    static WORD = _WORD;
 
     static g_exp = Int8Array.from([
         // bit format: x_1 z_1 x_2 z_2
@@ -11,16 +35,16 @@ class Tableau {
     ]);
 
 
-    constructor(num_qubits) {
-        this.num_qubits = num_qubits;
-        this.bits = (2*num_qubits+1)*num_qubits;
+    constructor(n) {
+        this.num_qubits = n;
+        this.bits = (2*n+1)*n;
 
-        const word      = Tableau.WORD;
-        const word_bits = -(-this.bits >> word) << word;
+        const words_row = -(-n >> _WORD);
+        this.words_row  =  words_row;
 
-        this.bufx  = new ArrayBuffer(word_bits);
-        this.bufz  = new ArrayBuffer(word_bits);
-        this.bufr  = new ArrayBuffer(-(-(2*num_qubits+1) >> word) << word);
+        this.bufx  = new ArrayBuffer(words_row * (2*n+1) << _WORD);
+        this.bufz  = new ArrayBuffer(words_row * (2*n+1) << _WORD);
+        this.bufr  = new ArrayBuffer(-(-2*(2*n+1) >> _WORD) <<_WORD);
 
         this.datax = new Uint32Array(this.bufx);
         this.dataz = new Uint32Array(this.bufz);
@@ -29,19 +53,17 @@ class Tableau {
 
     /** GET/SET for x **/
     getbitx(row, col) {
-        const bitpos = row * this.num_qubits + col;
-        const idx    = bitpos >> Tableau.WORD;
-        const offset = bitpos - (idx << Tableau.WORD);
-        const u8     = this.datax[idx];
+        const idx    = row * this.words_row + (col >>> _WORD);
+        const offset = (col &  _MASK);
+        const u     = this.datax[idx];
 
-        return (u8 & (1 << offset)) >>> offset;
+        return (u & (1 << offset)) >>> offset;
     }
 
     setbitx(row, col, val) {
-        const bitpos = row * this.num_qubits + col;
-        const idx    = bitpos >> Tableau.WORD;
-        const offset = bitpos - (idx << Tableau.WORD);
-        const u8     = this.datax[idx];
+        const idx    = row * this.words_row + (col >>> _WORD);
+        const offset = (col &  _MASK);
+        const u     = this.datax[idx];
 
         // !!! & has lower precedence than ===
         if ((val & 1) === 0) {
@@ -50,24 +72,22 @@ class Tableau {
             this.datax[idx] |=  (1 << offset);
         }
 
-        return (u8 & (1 << offset)) >>> offset;
+        return (u & (1 << offset)) >>> offset;
     }
 
     /** GET/SET for z **/
     getbitz(row, col) {
-        const bitpos = row * this.num_qubits + col;
-        const idx    = bitpos >> Tableau.WORD;
-        const offset = bitpos - (idx << Tableau.WORD);
-        const u8     = this.dataz[idx];
+        const idx    = row * this.words_row + (col >>> _WORD);
+        const offset = (col &  _MASK);
+        const u     = this.dataz[idx];
 
-        return (u8 & (1 << offset)) >>> offset;
+        return (u & (1 << offset)) >>> offset;
     }
 
     setbitz(row, col, val) {
-        const bitpos = row * this.num_qubits + col;
-        const idx    = bitpos >> Tableau.WORD;
-        const offset = bitpos - (idx << Tableau.WORD);
-        const u8     = this.dataz[idx];
+        const idx    = row * this.words_row + (col >>> _WORD);
+        const offset = (col &  _MASK);
+        const u     = this.dataz[idx];
 
         // !!! & has lower precedence than ===
         if ((val & 1) === 0) {
@@ -76,30 +96,26 @@ class Tableau {
             this.dataz[idx] |=  (1 << offset);
         }
 
-        return (u8 & (1 << offset)) >>> offset;
+        return (u & (1 << offset)) >>> offset;
     }
 
     /** GET/SET for r **/
     getbitr(row) {
-        const idx    = row >> Tableau.WORD;
-        const offset = row - (idx << Tableau.WORD);
-        const u8     = this.datar[idx];
+        const idx    = row >>> (_WORD-1);
+        const offset = (row << 1) & _MASK;
+        const u      = this.datar[idx];
 
-        return (u8 & (1 << offset)) >>> offset;
+        return (u & (3 << offset)) >>> offset;
     }
 
     setbitr(row, val) {
-        const idx    = row >> Tableau.WORD;
-        const offset = row - (idx << Tableau.WORD);
-        const u8     = this.datar[idx];
+        const idx    = row >>> (_WORD-1);
+        const offset = (row << 1) & _MASK;
+        const u      = this.datar[idx];
 
-        if ((val & 1) === 0) {
-            this.datar[idx] &= ~(1 << offset);
-        } else {
-            this.datar[idx] |=  (1 << offset);
-        }
+        this.datar[idx] = (u & ~(3 << offset)) | ((val & 3) << offset);
 
-        return (u8 & (1 << offset)) >>> offset;
+        return (u & (3 << offset)) >>> offset;
     }
 
     initialize() {
@@ -201,20 +217,23 @@ class Tableau {
             // zia
             this.setbitz(i, a,  zia ^ zib);
             // ri
-            this.setbitr(i, ri ^ (xia*zib *(xib ^ zia ^ 1)));
+            this.setbitr(i, (ri + 2*(xia*zib * (xib ^ zia ^ 1))) & 3 );
         }
     }
 
     h(a) {
-        const num_qubits = this.num_qubits;
-        const n          = 2*num_qubits+1;
+        console.log(`h ${a}`);
+        const n = this.num_qubits;
+        const N = 2*n+1;
 
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < N; i++) {
             const xia = this.getbitx(i, a);
             const zia = this.getbitz(i, a);
             const ri  = this.getbitr(i);
 
-            this.setbitr(i, ri ^ (xia * zia));
+            // add two to factor of i if gate is Y
+            if ((xia & zia) === 1)
+                this.setbitr(i, (ri + 2)&3 );
             // swap xia and zia
             this.setbitx(i, a, zia);
             this.setbitz(i, a, xia);
@@ -222,15 +241,18 @@ class Tableau {
     }
 
     p(a) {
-        const num_qubits = this.num_qubits;
-        const n          = 2*num_qubits+1;
+        console.log(`p ${a}`);
+        const n = this.num_qubits;
+        const N = 2*n+1;
 
-        for (let i = 0; i < n-1; i++) {
+        for (let i = 0; i < N-1; i++) {
             const xia = this.getbitx(i, a);
             const zia = this.getbitz(i, a);
             const ri  = this.getbitr(i);
 
-            this.setbitr(i, ri ^ (xia * zia));
+            // add two if gate is Y
+            if ((xia & zia) === 1)
+                this.setbitr(i, (ri + 2)&3 );
             this.setbitz(i, a, zia ^ xia);
         }
     }
@@ -240,7 +262,7 @@ class Tableau {
         let arr = new Array(num_qubits);
 
         for (let i = 0; i < 2*num_qubits; i++) {
-            let gate = this.getbitr(i) === 1 ? "-" : "+";
+            let gate = this.getbitr(i) === 2 ? '-' : '+';
             for (let j = 0; j < num_qubits; j++) {
                 const xij = this.getbitx(i, j);
                 const zij = this.getbitz(i, j);
@@ -267,21 +289,232 @@ class Tableau {
         return arr;
     }
 
+    powi(i, j) {
+        const n = this.num_qubits;
 
-    measure(a) {
-        const num_qubits = this.num_qubits;
-        const n          = 2*num_qubits+1;
-        let measurment   =  0;
+        let exp = this.getbitr(i) + this.getbitr(j);
+        for (let k = 0; k < n; k++) {
+            const gi = (this.getbitx(i, k) << 1) | this.getbitz(i, k);
+            const gj = (this.getbitx(j, k) << 1) | this.getbitz(j, k);
+            const g  =  (gi << 2) | gj;
 
-        if (a >= num_qubits) {
-            throw new Error(`qubit must be between 0 and ${num_qubits-1}`);
+            exp = (exp + PAULI_PROD[g]) & 3;
         }
 
-        // check for xpa = 1
+        return exp;
+    }
+
+    // left-multiply row i by row i
+    // row i = ()row j)(row i)
+    mult_row(i, j) {
+        const words_row = this.words_row;
+        let i_idx      = i*words_row;
+        let j_idx      = j*words_row;
+
+        this.setbitr(i, this.powi(j, i));
+        for (let k = 0; k < words_row; k++, i_idx++, j_idx++) {
+            this.datax[i_idx] ^= this.datax[j_idx];
+            this.dataz[i_idx] ^= this.dataz[j_idx];
+        }
+    }
+
+
+
+    copy_row(i, j) {
+        const words_row = this.words_row;
+        let i_idx      = i*words_row;
+        let j_idx      = j*words_row;
+
+        // copy over x's and z's from row i to row j
+        for (let k = 0; k < words_row; k++, i_idx++, j_idx++) {
+            this.datax[j_idx] = this.datax[i_idx];
+            this.dataz[j_idx] = this.dataz[i_idx];
+        }
+
+        // copy over r_j to r_i
+        this.setbitr(j, this.getbitr(i));
+    }
+
+
+    swap_row(i, j) {
+        const words_row = this.words_row;
+        let i_idx      = i*words_row;
+        let j_idx      = j*words_row;
+
+        for (let k = 0; k < words_row; k++, i_idx++, j_idx++) {
+            let temp = this.datax[j_idx];
+            this.datax[j_idx] = this.datax[i_idx];
+            this.datax[i_idx] = temp;
+
+            temp = this.dataz[j_idx];
+            this.dataz[j_idx] = this.dataz[i_idx];
+            this.dataz[i_idx] = temp;
+        }
+
+        // swap r_j and r_i
+        let r = this.getbitr(j);
+        this.setbitr(j, this.getbitr(i));
+        this.setbitr(i, r);
+    }
+
+    zero_row(i) {
+        const words_row = this.words_row;
+        let i_idx = i*words_row;
+
+        for(let k = 0; k < words_row; k++, i_idx++) {
+            this.datax[i_idx] = 0;
+        }
+
+        this.setbitr(i, 0);
+    }
+
+    seed(rank) {
+        const n = this.num_qubits;
+        this.zero_row(2*n);
+
+        let min = 0;
+        for (let i = 2*n-1; i >= n + rank; i--) {
+
+            let e = this.getbitr(i);
+            // find left-most column with Z in i-th row
+            for (let j = n-1; j >= 0; j--) {
+
+                if (this.getbitz(i, j) === 1) {
+                    min = j;
+                    if (this.getbitx(2*n, j) === 1)
+                        e = (e+2)&3;
+
+                }
+            }
+
+            // update seed
+            if (e === 2)
+                this.setbitx(2*n,min, this.getbitx(2*n,min) ^ 1);
+        }
+    }
+
+
+    gaussian() {
+        const n = this.num_qubits;
+
+        let i    = n;
+        for (let j = 0; j < n; j++) {
+            // find row with X in the j-th column starting from i-th row
+            let k = i;
+            for (; k < 2*n; k++) {
+                if (this.getbitx(k, j) === 1)
+                    break;
+            }
+
+            if (k < 2*n) {
+                this.swap_row(i, k);
+                this.swap_row(i-n, k-n);
+
+                for(let q = i+1; q < 2*n; q++) {
+                    if (this.getbitx(q, j) === 1) {
+                        this.mult_row(q, i);
+                        this.mult_row(i-n, q-n);
+                    }
+                }
+                i++;
+            }
+        }
+
+        let rank = i - n;
+
+        for (let j = 0; j < n; j++) {
+            // find row with Z in the j-th column starting from i-th row
+            let k = i;
+            for (; k < 2*n; k++) {
+                if (this.getbitz(k, j) === 1)
+                    break;
+            }
+
+            if (k < 2*n) {
+                this.swap_row(i, k);
+                this.swap_row(i-n, k-n);
+
+                for (let q = i+1; q < 2*n; q++) {
+                    if (this.getbitz(q, j) === 1) {
+                        this.mult_row(q, i);
+                        this.mult_row(i-n, q-n);
+                    }
+                }
+                i++;
+            }
+        }
+
+        console.log(rank);
+        return rank;
+    }
+
+    static print_ket(ket_state, n) {
+        const len = ket_state.length;
+        const symbols = [' +', ' i', ' -', '-i'];
+
+        for (let i = 0; i < len; i++) {
+            const s = ket_state[i];
+            const str = s.state.toString(2).padStart(n, '0');
+            console.log(`${symbols[s.factor]}|${str}〉\n`);
+        }
+    }
+
+    get_basis_state() {
+        const n = this.num_qubits;
+        let exp = this.getbitr(2*n);
+
+        let s = BigInt(0);
+        for (let j = n-1; j >= 0; j--) {
+            // count number of Y operators in pauli gate in scratch row
+            if (this.getbitx(2*n, j) === 1 && this.getbitz(2*n, j) === 1)
+                exp = (exp+1) & 3;
+            // counts bits in basis state
+            s = (s << 1n) | BigInt(this.getbitx(2*n, j) === 1 ? 1 : 0);
+        }
+
+        return {state: s, factor: exp};
+    }
+
+    ket_form() {
+        const n     = this.num_qubits;
+        const rank  = this.gaussian();
+        const total =  (1 << rank);
+
+
+        this.seed(rank);
+
+        let full_state = new Array(total);
+        full_state[total-1] = this.get_basis_state();
+
+        for (let k = 0; k < total-1; k++) {
+            let h = k ^ (k+1);
+
+            for (let i = 0; i < rank; i++) {
+                if (h & (1 << i) !== 0)
+                    this.mult_row(2*n, n+i);
+            }
+
+            full_state[k] = this.get_basis_state();
+        }
+
+        return full_state;
+    }
+
+
+    measure(a) {
+        const n = this.num_qubits;
+        const N          = 2*n+1;
+        let measurment   =  0;
+
+        if (a >= n) {
+            throw new Error(`qubit must be between 0 and ${n-1}`);
+        }
+
+        // check for destabilizer with xpa = 1
         let p = -1;
-        for (let i = 0; i < num_qubits; i++) {
-            if (this.getbitx(i+num_qubits, a) === 1) {
-                p = i+num_qubits;
+        for (let i = 0; i < n; i++) {
+            if (this.getbitx(i+n, a) === 1) {
+                p = i+n;
                 break;
             }
         }
@@ -289,87 +522,34 @@ class Tableau {
         if (p >= 0) {
             // outcome is probabilistic
             console.log("probabilistic");
-            for (let i = 0; i < n-1; i++) {
+            for (let i = 0; i < N-1; i++) {
                 if (i === p || this.getbitx(i, a) !== 1) continue;
                 this.rowsum(i, p);
             }
 
             // copy p-th row over to (p-n)-th row
-            let i = p*num_qubits, j = (p-num_qubits)*num_qubits, col = 0;
-            const end  = i+num_qubits;
-            const step = (1<<Tableau.WORD);
-            const mask =  step-1;
-            while (i < end) {
-                if ((i&mask) === 0 && (j&mask) === 0) {
-                    this.datax[j>>Tableau.WORD] = this.datax[i>>Tableau.WORD];
-                    this.dataz[j>>Tableau.WORD] = this.dataz[i>>Tableau.WORD];
-
-                    this.datax[i>>Tableau.WORD] = 0;
-                    this.dataz[i>>Tableau.WORD] = 0;
-                    i += step;
-                    j += step;
-                    col += step;
-                } else {
-                    this.setbitx(p-num_qubits, col, this.getbitx(p, col));
-                    this.setbitz(p-num_qubits, col, this.getbitz(p, col));
-
-                    this.setbitx(p, col, 0);
-                    this.setbitz(p, col, 0);
-                    i++, j++, col++;
-                }
-            }
-
-            while (i < end) {
-                this.setbitx(p-num_qubits, col, this.getbitx(p, col));
-                this.setbitz(p-num_qubits, col, this.getbitz(p, col));
-
-                this.setbitx(p, col, 0);
-                this.setbitz(p, col, 0);
-                i++, j++, col++;
-            }
+            this.copy_row(p, p-n);
+            this.zero_row(p);
 
             measurment = Math.random() < 0.5 ? 0 : 1;
-            this.setbitr(p, measurment);
+            this.setbitr(p, 2*measurment);
             this.setbitz(p, a, 1);
         } else {
             // outcome is determinate
             console.log("deterministic");
-
-            // zero the n-th row
-            let start      = (n-1)*num_qubits, col =  0;
-            const end      = start + num_qubits;
-            let word_start = (-(-start>>Tableau.WORD) << Tableau.WORD);
-            const word_end = ((end >> Tableau.WORD) << Tableau.WORD);
-            const step     = (1 << Tableau.WORD);
-
-            if (word_start >= end) word_start = end;
-
-            // bit wise 
-            while (start < word_start) {
-                this.setbitx(n-1, col, 0);
-                this.setbitz(n-1, col, 0);
-                start++, col++;
+            // find generator with xpa = 1
+            for (p = 0; p < n; p++) {
+                if (this.getbitx(p, a) === 1)
+                    break;
             }
-            // word wise 
-            while (start < word_end) {
-                this.datax[start>>>Tableau.WORD] = 0;
-                this.dataz[start>>>Tableau.WORD] = 0;
-                start+= step, col+= step;
-            }
-            // bit wise any of the reamining
-            while (start < end) {
-                this.setbitx(n-1, col, 0);
-                this.setbitz(n-1, col, 0);
-                start++, col++;
-            }
-            this.setbitr(n-1, 0);
-
-            for (let i = 0; i < num_qubits; i++) {
-                if (this.getbitx(i, a) !== 1) continue;
-                this.rowsum(n-1, i+num_qubits);
+            // copy  row into scratch row
+            this.copy_row(p+n, 2*n);
+            for (let i = p+1; i < n; i++) {
+                if (this.getbitx(i, a) === 1)
+                    this.mult_row(2*n, i+n);
             }
 
-            measurment = this.getbitr(n-1);
+            measurment = this.getbitr(2*n) === 0 ? 0 : 1;
         }
 
         return measurment;
