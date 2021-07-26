@@ -202,6 +202,7 @@ class Tableau {
     }
 
     cnot(a, b) {
+        console.log(`cnot ${a}, ${b}`);
         const num_qubits = this.num_qubits;
         const n1          = 2*num_qubits;
 
@@ -363,6 +364,7 @@ class Tableau {
 
         for(let k = 0; k < words_row; k++, i_idx++) {
             this.datax[i_idx] = 0;
+            this.dataz[i_idx] = 0;
         }
 
         this.setbitr(i, 0);
@@ -372,6 +374,8 @@ class Tableau {
         const n = this.num_qubits;
         this.zero_row(2*n);
 
+        //console.log("before seeding:");
+        //this.print();
         let min = 0;
         for (let i = 2*n-1; i >= n + rank; i--) {
 
@@ -444,7 +448,6 @@ class Tableau {
             }
         }
 
-        console.log(rank);
         return rank;
     }
 
@@ -463,16 +466,32 @@ class Tableau {
         const n = this.num_qubits;
         let exp = this.getbitr(2*n);
 
-        let s = BigInt(0);
-        for (let j = n-1; j >= 0; j--) {
-            // count number of Y operators in pauli gate in scratch row
-            if (this.getbitx(2*n, j) === 1 && this.getbitz(2*n, j) === 1)
-                exp = (exp+1) & 3;
-            // counts bits in basis state
-            s = (s << 1n) | BigInt(this.getbitx(2*n, j) === 1 ? 1 : 0);
-        }
+        if (n > 31) {
+            // use BigInt type to store basis state number
+            let s = BigInt(0);
+            for (let j = n-1; j >= 0; j--) {
+                // count number of Y operators in pauli gate in scratch row
+                if (this.getbitx(2*n, j) === 1 && this.getbitz(2*n, j) === 1)
+                    exp = (exp+1) & 3;
+                // counts bits in basis state
+                s = (s << 1n) | BigInt(this.getbitx(2*n, j) === 1 ? 1 : 0);
+            }
 
-        return {state: s, factor: exp};
+            return {state: s, factor: exp};
+        } else {
+            // use Number type to store basis state number
+            let s = Number(0);
+            for (let j = n-1; j >= 0; j--) {
+                // count number of Y operators in pauli gate in scratch row
+                if (this.getbitx(2*n, j) === 1 && this.getbitz(2*n, j) === 1)
+                    exp = (exp+1) & 3;
+                // counts bits in basis state
+                s = (s << 1) | (this.getbitx(2*n, j) === 1 ? 1 : 0);
+                //console.log(`j=${j}, s=${s}`);
+            }
+            //console.log(`state: ${s}, factor: ${exp}`);
+            return {state: Math.abs(s), factor: exp};
+        }
     }
 
     ket_form() {
@@ -482,17 +501,24 @@ class Tableau {
 
 
         this.seed(rank);
+        //console.log(`rank: ${rank}, seeded:`);
+        //this.print();
 
         let full_state = new Array(total);
         full_state[total-1] = this.get_basis_state();
 
         for (let k = 0; k < total-1; k++) {
             let h = k ^ (k+1);
+            //console.log(`t=${k}, t2=${h}`);
 
             for (let i = 0; i < rank; i++) {
-                if (h & (1 << i) !== 0)
+                // NOTE: & has lower precendence than !==
+                if ((h & (1 << i)) !== 0) {
                     this.mult_row(2*n, n+i);
+                    //console.log(`mult by ${n+i}`);
+                }
             }
+            //this.print();
 
             full_state[k] = this.get_basis_state();
         }
@@ -502,6 +528,7 @@ class Tableau {
 
 
     measure(a) {
+        console.log(`m ${a}`);
         const n = this.num_qubits;
         const N          = 2*n+1;
         let measurment   =  0;
@@ -521,7 +548,7 @@ class Tableau {
 
         if (p >= 0) {
             // outcome is probabilistic
-            console.log("probabilistic");
+            //console.log("probabilistic");
             for (let i = 0; i < N-1; i++) {
                 if (i === p || this.getbitx(i, a) !== 1) continue;
                 this.rowsum(i, p);
@@ -536,7 +563,7 @@ class Tableau {
             this.setbitz(p, a, 1);
         } else {
             // outcome is determinate
-            console.log("deterministic");
+            //console.log("deterministic");
             // find generator with xpa = 1
             for (p = 0; p < n; p++) {
                 if (this.getbitx(p, a) === 1)
