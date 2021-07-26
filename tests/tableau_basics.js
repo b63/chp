@@ -118,14 +118,14 @@ test("setbitxz/getbitxz, n = 40", assert => {
 
 
 const check_setgetbitr = function(n, tab, assert) {
-    const total_bits = (2*n+1);
+    const total_bits = 2*(2*n+1);
     const num_bytes = (-(-total_bits  >> 3) << 3);
     const bits = new Uint8Array(num_bytes);
 
     const get_bit = function (i) {
-        const u8 = bits[i>>>3];
+        const u8 = bits[i>>>2];
         const offset = (i & 7);
-        return (u8 & (1 << offset) ) >>> offset;
+        return (u8 & (3 << offset) ) >>> offset;
     };
 
     const setbitr = tab.setbitr;
