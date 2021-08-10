@@ -134,6 +134,12 @@ window.chp['output'] = (function() {
     };
 
     const add_to_output = function(type, data) {
+        if (output_div.children.length === 0) {
+            const entry_div = document.createElement('div');
+            entry_div.classList.add('output-entry');
+            output_div.append(entry_div);
+        }
+
         const last_entry = output_div.lastChild;
 
         let result_div = null;
