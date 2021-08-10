@@ -448,17 +448,24 @@ window.chp['main'] = (function() {
 })();
 
 window.chp.editor.add_lines(`\
-hadamard 0
+# middle man prepares entangled pair
 hadamard 1
-hadamard 2
-hadamard 3
-# cnot 0 1
-# phase 1
-# phase 1
-# phase 2
-# phase 3
-measure 0 0
+cnot 1 2
+# alice: qubit 1
+# bob: qubit 2
+
+cnot 0 1
+hadamard 0
+measure 0 0 
 measure 1 1
-measure 2 2
-measure 3 3
+
+# alice send qubit 0 and qubit 1 to bob
+cnot 0 3
+cnot 1 4
+
+# bob recovers teleported state
+cnot 4 2
+hadamard 2
+cnot 3 2
+hadamard 2
 `);
