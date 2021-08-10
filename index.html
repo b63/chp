@@ -7,6 +7,16 @@
     <title>CHP</title>
 
   <style>
+    @font-face {
+      font-family: 'IBM Plex Mono' ;
+      src: url('/fonts/IBMPlexMono-Text.ttf');
+    }
+
+    @font-face {
+      font-family: 'IBM Plex Sans' ;
+      src: url('/fonts/IBMPlexSans-Text.ttf');
+    }
+
     * {
       padding: 0;
       margin: 0;
@@ -20,12 +30,646 @@
     html {
       background-color: #222;
     }
+
+    .content {
+      flex: 1 1 auto;
+    }
+
+    .center-content {
+      max-width: 1200px;
+      position: relative;
+      margin: 0px auto;
+    }
+
+    .editor-output {
+      display: flex;
+      height: 80vh;
+      margin: 0px auto;
+      font-family: 'IBM Plex Mono', 'Source Code Pro', Monospace;
+      font-size: 16px;
+      max-height: 750px;
+    }
+
+    .editor {
+      flex-direction: row;
+      height: 100%;
+      width: 100%;
+      outline: 0px;
+      counter-reset: line;
+      padding-left: 16px;
+      color: white;
+      white-space: nowrap;
+    }
+
+    .editor>div {
+      display: block;
+      width: 100%;
+      height: 1.5em;
+    }
+
+    .editor div span.keyword {
+      color: #b277e6;
+    }
+
+    .editor div span.comment {
+      font-style: italic;
+      color: #555;
+    }
+
+    .editor-container {
+      height: 100%;
+      width: calc(50%);
+      padding: 20px 0px 0px 20px;
+      background-color: #22272E;
+      margin-right: 5px;
+      display: flex;
+      align-items: flex-start;
+      height: 100%;
+      overflow-y: scroll;
+    }
+
+    .output {
+      flex-direction: row;
+      height: 100%;
+      padding: 20px 0px 0px 20px;
+      font-family: 'IBM Plex Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      overflow-y: scroll;
+      background-color: inherit;
+    }
+
+    .output-container {
+      height: 100%;
+      background-color: #171c29;
+      margin-left: 5px;
+      width: calc(50%);
+      font: Ubuntu;
+      color: white;
+      font-size: 16px;
+      padding: 0px 10px 0px 0px;
+    }
+
+    .gutter {
+      position: sticky;
+      display: flex;
+      flex-shrink: 0;
+      min-width: 25px;
+      justify-content: flex-start;
+      flex-direction: column;
+      height: 100%;
+    }
+    
+    .gutter div {
+      text-align: right;
+      height: 1.5em;
+      color: #807b75;
+    }
+
+    .center-content header {
+      display: flex;
+      align-items; center;
+      height: 60px;
+      width: 100%;
+    }
+
+    .output-input-line{
+      width: 100%;
+    }
+
+    .output-input-line::before {
+      content: "▸";
+      color: #ff6600;
+      font-weight: 900;
+      font-size: 14px;
+      position: sticky;
+      padding: 0px 5px 0px 0px;
+      bottom: calc(100%);
+    }
+    .output-result {
+      display: flex;
+      padding: 5px 0px 0px 0px;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    .output-result .output-line {
+      display: block;
+      width: 100%;
+      min-height: 1em;
+    }
+
+    .output-input-line textarea {
+      outline: none;
+      border: none;
+      font-size: inherit;
+      width: calc(100% - 2em);
+      resize: none;
+      overflow: hidden;
+      min-height: 1em;
+      background-color: inherit;
+      color: white;
+    }
+
+    .output-entry {
+      width: 100%;
+      padding: 0px 0px 0.75em 0px;
+    }
+
+    .type-progress {
+      display: flex !important;
+      flex-direction: row;
+      justify-content: flex-start;
+      flex-wrap: nowrap;
+      align-self: center;
+    }
+
+    .type-progress .label {
+      flex: 1 1;
+    }
+
+    .type-progress .progress-bar {
+      flex: 2 1;
+      align-self: center;
+      border: solid 1px #888;
+      border-radius: 5px;
+      height: 1em;
+      margin: 0px 5px 0px 5px;
+    }
+
+    .progress-bar .progress-bar-fill {
+      height: 100%;
+      border-radius: inherit;
+      background-color: #efefef;
+    }
+
+    .type-center {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .type-progress .fraction {
+      flex-grow: 0;
+      align-self: center;
+    }
+
+    .type-table table {
+      margin: auto auto;
+      border-collapse: collapse;
+    }
+
+    .type-table th{
+      padding: 5px 2em 5px 10px;
+      border: solid #fafafa;
+      border-width: 0px 0px 1px 0px;
+    }
+
+    .type-table tr {
+      background-color: #171c29;
+    }
+    
+    .type-table tr:first-child {
+      background-color: #171c29 !important;
+    }
+
+    .type-table tr:nth-child(even) {
+      background-color: #2b313f;
+    }
+
+    .type-table td {
+      padding: 5px 10px 5px 10px;
+    }
+
+    .type-gen-table tr>td:first-child {
+      padding: 0px 0.5em 0px 0px !important;
+      color: #807b75 !important;
+    }
+
+    .type-source {
+      height: 100%;
+      width: 100% !important;
+      display: flex !important;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: baseline;
+      background-color: #22272e;
+      padding: 0.5em 0px 0.5em 0px;
+      border-radius: 5px;
+    }
+     
+    .type-source .line-number {
+      padding: 0px 1em 0px 1.5em;
+      color: #807b75;
+    }
+
+    .type-source .line-content {
+      flex: 1 1;
+    }
+
+    .type-source .line-content .keyword{
+      color: #b277e6;
+    }
+
+    .center-content>header {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .center-content button {
+        padding: 16px 32px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 16px;
+        margin: 4px 2px;
+        transition-duration: 0.4s;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .center-content > header {
+        font-family: 'IBM Plex Sans', Sans-Serif;
+    }
+
+    .right-header-space {
+      height: 100%;
+      flex: 1 1;
+    }
+
+    .buttons-div {
+      display: flex;
+      height: 100%;
+      flex: 1 1;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .settings-button-div {
+      display: flex;
+      height: 100%;
+      flex: 1 1;
+      flex-direction: row;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .settings-dropdown {
+      display: flex;
+      opacity: 1;
+      flex-direction: column;
+      align-content: center;
+      justify-content: center;
+      position: absolute;
+      min-width: 160px;
+      z-index: 1;
+      background-color: #313131;
+      border-radius: 8px;
+      top: 100px;
+      padding: 20px 10px 10px 10px;
+      font-family: inherit;
+      box-shadow: 0px 0px 16px 0px rgb(0 0 0 / 21%)
+      transition: opacity 500ms, visiblity 500ms, top 600ms;
+      -webkit-transition: opacity 500ms, visiblity 500ms, top 600ms;
+      visibility: visible;
+    }
+
+    .hide-dropdown {
+      opacity: 0 !important;
+      top: 50px !important;
+      visibility: hidden !important;
+    }
+
+    .settings-dropdown .settings-table {
+      display: flex;
+      flex-direction: column;
+      align-content: center;
+      justify-content: flex-start;
+      width: 100%;
+    }
+
+    .settings-table .settings-label{
+      color: white;
+      width: 8em;
+    }
+
+    .settings-field input {
+      width: 8em;
+      background-color: #232323;
+      border: 2px solid #23232300;
+      border-radius: 5px;
+      padding: 6px 5px 6px 10px;
+      color: white;
+      font-size: 1.1em;
+      font-family: inherit;
+      outline: none;
+    }
+    .settings-field input:focus {
+      background-color: #161616;
+    }
+
+    .settings-field input.invalid {
+      border: 2px solid #db4f4f;
+    }
+
+    .settings-apply-button-div {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      margin: 20px 0px 0px 0px;
+    }
+
+    .settings-apply-button {
+      background-color: inherit;
+      color: #5ce180;
+      padding: 5px 10px 5px 10px;
+      border: none;
+      border-radius: 5px;
+      font-family: inherit;
+    }
+
+    .settings-apply-button:hover {
+      background-color: #272727;
+    }
+
+    .settings-apply-button.disabled {
+      color: red;
+    }
+
+    .settings-dropdown .settings-row {
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: flex-start;
+      margin: 5px 0px 5px 0px;
+    }
+
+    .run-stop-button {
+        border: 1px solid #4c4a49;
+        border-radius: 8px;
+        margin: 0px 1em 0px 1em;
+    }
+
+    .pause-play-button,.step-button, .settings-button {
+      height: 2.5em;
+      width: 6.5em;
+      padding: 0px !important;
+      color: #d4d4d4 !important;
+      fill: #d4d4d4;
+      background-color: #353535;
+      border: none !important;
+      border-radius: 8px;
+      font-family: inherit;
+    }
+    .pause-play-button {
+      margin-right: 20px !important;
+    }
+    .step-button {
+      margin-left: 20px !important;
+    }
+
+    .pause-play-button:enabled:hover,.step-button:enabled:hover,.settings-button:hover {
+      background-color: #555555;
+    }
+
+    .pause-play-button:disabled, .step-button:disabled {
+      opacity: 0.5 !important;
+    }
+
+    .button-active-state {
+      background-color: #1b1b1b;
+    }
+
+    .paused-state {
+      /* background-color: #1b1b1b; */
+    }
+
+    .button-active-state:hover, /* .paused-state:hover */ {
+      background-color: #3b3939 !important;
+    }
+
+    .stop-state {
+        background-color: #1e222f;
+        color: #a69e92;
+        fill: #a69e92;
+    }
+
+    .stop-state:hover {
+        background-color: #ef5533;
+        color: white;
+        fill: white;
+    }
+
+    .type-error {
+      color: #ff6578;
+    }
+
+    .run-state {
+        background-color: #1e222f;
+        color: #5ce180;
+        fill: #5ce180;
+    }
+
+    .run-state:hover {
+        background-color: #1a8938;
+        color: white;
+        fill: white;
+    }
+
+    .buttons-div button span {
+      margin-right: 5px;
+    }
+
+
+    .run-svg,.play-svg {
+        width: 12.5px;
+        height: 13px;
+        color: inherit;
+    }
+
+    .stop-svg {
+      width: 11.5px;
+      height: 13px;
+      color: inherit;
+      display: none;
+    }
+
+    .pause-svg {
+      height: 13px;
+    }
+
+    .play-svg {
+      display: none;
+    }
+
+     .step-svg {
+       height: 13px;
+     }
+
+    .settings-svg {
+      height: 13px;
+    }
+
+    /* width */
+    ::-webkit-scrollbar {
+      width: 0px;
+    }
+
+    /* Track */
+    .editor-container::-webkit-scrollbar-track {
+      background: #22272E;
+    }
+
+    /* Track */
+    .output-container::-webkit-scrollbar-track {
+      background: #171c29;
+    }
+
+    /* Handle */
+    ::-webkit-scrollbar-thumb {
+      background: #888;
+      border-radius: 5px;
+    }
+
+    /* Handle on hover */
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
   </style>
 
+  <link rel="modulepreload" href="/simulator_worker.js">
+  <script>
+    MathJax = {
+      startup: {
+        elements: null,
+        typeset: false,
+        input: ['tex'],
+        output: 'svg'
+      },
+      options: {
+        enableMenu: false,
+        menuOptions: {
+          settings: {
+            assistiveMml: false,   // true to enable assitive MathML
+            collapsible: false,  // true to enable collapsible math
+            explorer: false,      // true to enable the expression explorer
+          }
+        }
+      }
+    };
+  </script>
+  <script type="text/javascript" id="MathJax-script" async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+  </script>
   <script type="module" src="./tableau.js" defer></script>
+  <script src="/editor.js" defer></script>
+  <script src="/output.js" defer></script>
+  <script src="/main.js" defer></script>
   </head>
 
   <body>
+    <div class="content">
+      <div class="center-content">
+        <header>
+          <div class="right-header-space">
+          </div>
+          <div class="buttons-div">
+            <div class="pause-play-button-div">
+              <button class="pause-play-button">
+                <span> Pause </span>
+                <svg class="play-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12.388 14.873"><defs class="jsx-3550419329"></defs><g><path d="M.563,7.439q0-2.973,0-5.946a1.044,1.044,0,0,1,.051-.361A.694.694,0,0,1,1.664.805c.639.372,1.271.752,1.9,1.129q3.879,2.309,7.758,4.62A1.042,1.042,0,0,1,11.507,8.2a.931.931,0,0,1-.171.122Q6.544,11.177,1.75,14.03a.861.861,0,0,1-.63.16.7.7,0,0,1-.556-.716q0-1.609,0-3.22Z"></path></g></svg>
+                <svg class="pause-svg" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 47.607 47.607" style="enable-background:new 0 0 47.607 47.607;" xml:space="preserve"> <g> <path d="M17.991,40.976c0,3.662-2.969,6.631-6.631,6.631l0,0c-3.662,0-6.631-2.969-6.631-6.631V6.631C4.729,2.969,7.698,0,11.36,0   l0,0c3.662,0,6.631,2.969,6.631,6.631V40.976z"/> <path d="M42.877,40.976c0,3.662-2.969,6.631-6.631,6.631l0,0c-3.662,0-6.631-2.969-6.631-6.631V6.631   C29.616,2.969,32.585,0,36.246,0l0,0c3.662,0,6.631,2.969,6.631,6.631V40.976z"/> </g> </svg>
+              </button>
+            </div>
+            <div class="run-stop-button-div">
+              <button class="run-stop-button run-state">
+                <span> Run </span>
+                <svg class="run-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12.388 14.873"><defs class="jsx-3550419329"></defs><g><path d="M.563,7.439q0-2.973,0-5.946a1.044,1.044,0,0,1,.051-.361A.694.694,0,0,1,1.664.805c.639.372,1.271.752,1.9,1.129q3.879,2.309,7.758,4.62A1.042,1.042,0,0,1,11.507,8.2a.931.931,0,0,1-.171.122Q6.544,11.177,1.75,14.03a.861.861,0,0,1-.63.16.7.7,0,0,1-.556-.716q0-1.609,0-3.22Z"></path></g></svg>
+                <svg class="stop-svg" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg"><defs class="jsx-3791390607"></defs><g><path d="M 0 2C 0 0.895431 0.895431 0 2 0L 20 0C 21.1046 0 22 0.895431 22 2L 22 20C 22 21.1046 21.1046 22 20 22L 2 22C 0.895431 22 0 21.1046 0 20L 0 2Z"></path></g></svg>
+              </button>
+            </div>
+            <div class="step-button-div">
+              <button class="step-button">
+                <span> Step </span>
+                <svg class="step-svg" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 20.465 20.465" style="enable-background:new 0 0 20.465 20.465;" xml:space="preserve"> <g id="c91_rewind"> <path d="M9.112,1.372c0.139-0.069,0.303-0.049,0.424,0.045l10.776,8.501c0.094,0.076,0.153,0.191,0.153,0.312    s-0.06,0.24-0.153,0.314L9.536,19.047c-0.071,0.056-0.163,0.088-0.248,0.088l-0.176-0.042c-0.138-0.064-0.226-0.204-0.226-0.359    V1.732C8.887,1.58,8.975,1.437,9.112,1.372z"/> <path d="M0.225,1.372C0.364,1.303,0.529,1.323,0.65,1.417l10.776,8.501c0.093,0.076,0.152,0.191,0.152,0.312    s-0.06,0.24-0.152,0.314L0.649,19.047c-0.073,0.056-0.163,0.088-0.249,0.088l-0.176-0.042C0.088,19.028,0,18.889,0,18.733V1.732    C0,1.58,0.088,1.437,0.225,1.372z"/> </g> </svg>
+              </button>
+            </div>
+          </div>
+          <div class="settings-button-div">
+            <button class="settings-button button-inactive-state">
+              <span> Options </span>
+            </button>
+            <div class="settings-dropdown hide-dropdown">
+              <div class="settings-table">
+                <div class="settings-row">
+                  <div class="settings-label"> <span> Qubits </span> </div>
+                  <div class="settings-field">
+                    <input type="number" id="num-qubits-field" value="2" min="1"/>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-label"> <span> Registers </span> </div>
+                  <div class="settings-field">
+                    <input type="number" id="num-registers-field" value="2" min="1"/>
+                  </div>
+                </div>
+                <div class="settings-row">
+                  <div class="settings-label"> <span> Runs </span> </div>
+                  <div class="settings-field">
+                    <input type="number" id="num-shots-field" value="10" min="1"/>
+                  </div>
+                </div>
+              </div>
+              <div class="settings-apply-button-div">
+                <button class="settings-apply-button"><span>Apply</span></button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div class="editor-output">
+
+          <div class="editor-container">
+            <div class="gutter"><div>1</div></div>
+            <div class="editor" contenteditable="true" spellcheck="false"></div>
+          </div>
+
+          <div class="output-container">
+            <div class="output">
+              <div class="output-history">
+                  <div class="output-entry">
+                    <div class="output-input-line"><!--
+                    --><span>printf -vvv "hello this is test"</span>
+                    </div>
+                    <div class="output-result">
+                      <div class="output-line"><!--
+                    --><span>Taceback (most recent call last):</span>
+                      </div>
+                      <div class="output-line"><!--
+                    --><span>Error unkown option '-vvv'</span>
+                      </div>
+                    </div>
+                </div>
+              </div>
+
+            <div class="input-container">
+              <div class="output-entry">
+                <div class="output-input-line"><!--
+                --><textarea spellcheck="false" autocapitalize="none" tabindex="0"></textarea>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
 
   </body>
 </html>

@@ -21,18 +21,20 @@ const PAULI_PROD = [
            3,    // YX
            0,    // YY
         ];
+
+const I_EXP = Int8Array.from([
+    // bit format: x_1 z_1 x_2 z_2
+    0,  0,  0,  0, // x1 = 0, z1 = 0 
+    0,  0,  1, -1, // x1 = 0, z1 = 1
+    0, -1,  0,  1, // x1 = 1, z1 = 0
+    0,  1, -1,  0  // x1 = 1, z1 = 1
+]);
+
 const SYMBOLS_I = ['+', 'i', '-', '-i'];
 
 class Tableau {
     static WORD = _WORD;
 
-    static g_exp = Int8Array.from([
-        // bit format: x_1 z_1 x_2 z_2
-        0,  0,  0,  0, // x1 = 0, z1 = 0 
-        0,  0,  1, -1, // x1 = 0, z1 = 1
-        0, -1,  0,  1, // x1 = 1, z1 = 0
-        0,  1, -1,  0  // x1 = 1, z1 = 1
-    ]);
 
 
     constructor(n) {
@@ -186,8 +188,8 @@ class Tableau {
             const zhj = this.getbitz(h, j);
 
             const xzxz = (xij << 3) | (zij << 2) | (xhj << 1) | (zhj);
-            sum  += Tableau.g_exp[xzxz];
-            //console.log(`${j}: g = ${Tableau.g_exp[xzxz]}`);
+            sum  += I_EXP[xzxz];
+            //console.log(`${j}: g = ${I_EXP[xzxz]}`);
 
             this.setbitx(h, j, (xij ^ xhj) & 1);
             this.setbitz(h, j, (zij ^ zhj) & 1);
@@ -202,7 +204,7 @@ class Tableau {
     }
 
     cnot(a, b) {
-        console.log(`cnot ${a}, ${b}`);
+        //console.log(`cnot ${a}, ${b}`);
         const num_qubits = this.num_qubits;
         const n1          = 2*num_qubits;
 
@@ -223,7 +225,7 @@ class Tableau {
     }
 
     h(a) {
-        console.log(`h ${a}`);
+        //console.log(`h ${a}`);
         const n = this.num_qubits;
         const N = 2*n+1;
 
@@ -242,7 +244,7 @@ class Tableau {
     }
 
     p(a) {
-        console.log(`p ${a}`);
+        //console.log(`p ${a}`);
         const n = this.num_qubits;
         const N = 2*n+1;
 
@@ -259,8 +261,9 @@ class Tableau {
     }
 
     generators() {
+        // for debugging/testings purposes
         const num_qubits = this.num_qubits;
-        let arr = new Array(num_qubits);
+        let arr = new Array(2*num_qubits);
 
         for (let i = 0; i < 2*num_qubits; i++) {
             let gate = this.getbitr(i) === 2 ? '-' : '+';
@@ -285,6 +288,46 @@ class Tableau {
             }
 
             arr[i] = gate;
+        }
+
+        return arr;
+    }
+
+    get_generators(fold, stab) {
+        const num_qubits = this.num_qubits;
+        const arr = new Array(num_qubits);
+
+        let start = (stab ? 0 : num_qubits);
+        for (let i = start; i < start+num_qubits; i++) {
+            const gen = {factor: (this.getbitr(i) === 2 ? '-' : '+')};
+            const gates = [];
+            for (let j = 0; j < num_qubits; j++) {
+                const xij = this.getbitx(i, j);
+                const zij = this.getbitz(i, j);
+
+                let gate = '';
+                switch((xij << 1) | zij) {
+                    case 0:
+                        gate = "I";
+                        break;
+                    case 1:
+                        gate = "Z";
+                        break;
+                    case 2:
+                        gate = "X";
+                        break;
+                    case 3:
+                        gate = "Y";
+                        break;
+                }
+                if (!fold || (j === 0 || gate !== gates[gates.length-1][0])) {
+                    gates.push([gate, 1]);
+                } else {
+                    gates[gates.length-1][1]++;
+                } 
+            }
+            gen.gates = gates;
+            arr[i-start] = gen;
         }
 
         return arr;
@@ -528,7 +571,7 @@ class Tableau {
 
 
     measure(a) {
-        console.log(`m ${a}`);
+        //console.log(`m ${a}`);
         const n = this.num_qubits;
         const N          = 2*n+1;
         let measurment   =  0;
