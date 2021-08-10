@@ -6,9 +6,9 @@ if (!window.chp['state'])
 
 if(!window.chp.state['USER_OPTIONS'])
     window.chp.state['USER_OPTIONS'] = {
-        qubits: 4,
-        registers: 4,
-        shots: 100000
+        qubits: 5,
+        registers: 5,
+        shots: 100
     };
 
 window.chp['main'] = (function() {
