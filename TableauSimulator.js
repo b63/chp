@@ -1,5 +1,5 @@
 'use strict';
-import  {Tableau} from '/tableau.js';
+import  {Tableau} from '/chp/tableau.js';
 
 class TableauSimulator {
     constructor(prog, options) {
