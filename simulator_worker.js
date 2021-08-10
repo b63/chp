@@ -3,8 +3,8 @@
 
 (async function(){
     // dynamically import scripts as modules
-    const m1 = await import('/tableau.js');
-    const m2 = await import('/TableauSimulator.js');
+    const m1 = await import('/chp/tableau.js');
+    const m2 = await import('/chp/TableauSimulator.js');
 
     const Tableau = m1.Tableau;
     const TableauSimulator = m2.TableauSimulator;
