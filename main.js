@@ -478,4 +478,3 @@ hadamard 2
 cnot 3 2
 hadamard 2
 `);
-window.chp.output.add_to_output('default', {text: 'Note: Requires at least Chrome 80 to work.'});
