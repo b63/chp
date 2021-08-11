@@ -322,7 +322,7 @@ window.chp['output'] = (function() {
     const enable_input = function(enable) {
         if (enable === true) {
             input_div.style.display = 'block';
-            input_div.focus();
+            txtarea_node.focus();
         } else {
             input_div.style.display = 'none';
         }
