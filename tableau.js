@@ -204,6 +204,7 @@ class Tableau {
     }
 
     cnot(a, b) {
+        // control a, target b
         //console.log(`cnot ${a}, ${b}`);
         const num_qubits = this.num_qubits;
         const n1          = 2*num_qubits;
