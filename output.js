@@ -22,6 +22,14 @@ window.chp['output'] = (function() {
     const input_div    = document.querySelector(".input-container .output-input-line");
     const txtarea_node = document.querySelector(".output-input-line textarea");
 
+    output_box.addEventListener('click', function(e) {
+        const y_min = txtarea_node.getBoundingClientRect().top;
+        const y = e.clientY;
+        if (y >= y_min) {
+            txtarea_node.focus();
+        }
+    });
+
     txtarea_node.addEventListener("input", function(e) {
         txtarea_node.style.height = txtarea_node.scrollHeight + "px";
 
@@ -226,14 +234,14 @@ window.chp['output'] = (function() {
             for (let i = 0; i < data.results.length; i++) {
                 const col = data.results[i];
                 let fcol = new Array(3);
-                fcol[0] = `|${col[0]}〉`;
+                fcol[0] = `${col[0]}`;
                 fcol[1] = `${(col[1]*100).toFixed(2)} %`
                 fcol[2] = `${col[2]}`;
                 formatted_results[i] = fcol;
             }
 
             const table = create_output_table(
-                ['Basis State', 'Prob', 'Counts'],
+                ['Register Value', 'Prob', 'Counts'],
                 formatted_results,
                 ['center', 'right', 'right']
             );

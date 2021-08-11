@@ -41,6 +41,96 @@
       margin: 0px auto;
     }
 
+    .text-content {
+      display: flex;
+      width: 100%;
+      margin: 5em 0px 0px 0px;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: rgb(25 25 25);
+    }
+
+    .text-content .center {
+      margin: 0px auto 0px auto;
+      padding: 2em 3em 2em 3em;
+      display: flex;
+      max-width: 800px;
+      flex-direction: column;
+      justify-content: flex-start;
+      font-family: 'IBM Plex Sans', Sans-Serif;
+      background-color: inherit;
+      border-radius: 5px;
+      color: #dcdcdc;
+      font-size: 1.1em;
+    }
+
+    .text-content section {
+      margin: 0px 0px 2em 0px;
+    }
+
+    section header {
+      font-size: 2em;
+      margin: 0.5em 0px 0.5em 0px;
+    }
+
+    .section .content {
+      margin: 0px 0px 0px 1em;
+      padding: 1em 0px 0px 0px;
+    }
+
+    section .command-section,.instruction-section {
+      margin: 0px 0px 1.5em 0px;
+    }
+
+    .command-section .command-description {
+      padding: 0.5em 0px 0px 1em;
+    }
+
+    .instruction-section .instruction-description {
+      padding: 0.5em 0px 0px 1em;
+    }
+
+    .instruction-block {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+
+    .instruction-template {
+      display: inline-block;
+      background-color: #2a323c;
+      padding: 0.2em 1.5em 0.2em 1em;
+      border-radius: 8px;
+      color: #efefef;
+      font-family: 'IBM Plex Mono', Monospace !important;
+      margin: 0px 0px 0.2em 0px;
+    }
+
+    .instruction-template .keyword {
+      color: #895FB2;
+    }
+    
+    .instruction-template .qubit-arg {
+      font-style: italic;
+      color: #a06464;
+    }
+
+    .instruction-template .register-arg {
+      font-style: italic;
+      color: #5d90a0;
+    }
+
+    .command-block {
+      display: inline-block;
+      background-color: #2b3245;
+      padding: 0.2em 1.5em 0.2em 1em;
+      border-radius: 8px;
+      color: #efefef;
+      font-family: 'IBM Plex Mono', Monospace !important;
+    }
+
     .editor-output {
       display: flex;
       height: 80vh;
@@ -89,15 +179,14 @@
     }
 
     .output {
-      flex-direction: row;
       height: 100%;
-      padding: 20px 0px 0px 20px;
       font-family: 'IBM Plex Mono', monospace;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
       overflow-y: scroll;
       background-color: inherit;
+      padding: 0px 5px 0px 0px;
     }
 
     .output-container {
@@ -108,7 +197,7 @@
       font: Ubuntu;
       color: white;
       font-size: 16px;
-      padding: 0px 0px 0px 0px;
+      padding: 20px 0px 0px 20px;
     }
 
     .gutter {
@@ -548,8 +637,8 @@
   <script>
     MathJax = {
       startup: {
-        elements: null,
-        typeset: false,
+        elements: document.querySelector('.text-content'),
+        typeset: true,
         input: ['tex'],
         output: 'svg'
       },
@@ -562,6 +651,9 @@
             explorer: false,      // true to enable the expression explorer
           }
         }
+      },
+      tex: {
+        inlineMath: [['$', '$']]
       }
     };
   </script>
@@ -633,8 +725,8 @@
             </div>
           </div>
         </header>
-        <div class="editor-output">
 
+        <div class="editor-output">
           <div class="editor-container">
             <div class="gutter"><div>1</div></div>
             <div class="editor" contenteditable="true" spellcheck="false"></div>
@@ -653,11 +745,153 @@
               </div>
             </div>
 
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
+      <div class="text-content">
+        <div class="center">
+          <section>
+            <header> Commands </header>
+            <div class="content">
+              <div class="command-section">
+                <div class="command-block">
+                  <span>run</span>
+                </div>
+                <div class="command-description">
+                  <p>Starts executing the program currently in the editor
+                  the number of times specifed under 'Shots,' and prints table
+                  showing the frequency of results of register values after each run.
+                  Register values are shown as $r_{n-1}\cdots r_1r_0$.</p>
+                </div>
+              </div>
+              <div class="command-section">
+                <div class="command-block">
+                  <span>step</span>
+                </div>
+                <div class="command-description">
+                  <p>Steps through the currently running program one instruction at a time.</p>
+                </div>
+              </div>
+              <div class="command-section">
+                <div class="command-block">
+                  <span>printket</span>
+                </div>
+                <div class="command-description">
+                  <p>Prints out the current state (while stepping through) in ket form, listing out
+                  all the non-zero basis states and their corresponding coefficients.</p>
+                </div>
+              </div>
+              <div class="command-section">
+                <div class="command-block">
+                  <span>printstab</span>
+                </div>
+                <div class="command-description">
+                  <p>Prints out a table of generators for the unique Pauli Stabilizer group $\mathcal{P}_n$ that corresponds
+                  to the current state.</p>
+                </div>
+              </div>
+              <div class="command-section">
+                <div class="command-block">
+                  <span>printstabanti</span>
+                </div>
+                <div class="command-description">
+                  <p>Prints out a table of generators for the Anti-Stabilizer group. The union of the
+                  Stabilizer group and the Anti-Stabilizer group is the Pauli Group.</p>
+                </div>
+              </div>
+              <div class="command-section">
+                <div class="command-block">
+                  <span>help</span>
+                </div>
+                <div class="command-description">
+                  <p>Scrolls down to this section.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <header> Instructions </header>
+            <div class="content">
+              <div class="instruction-section">
+                <div class="instruction-block">
+                  <div class="instruction-template">
+                    <span class="keyword">hadamard</span>
+                    <span class="qubit-arg">&lt;qubit&gt;</span>
+                  </div>
+                  <div class="instruction-template">
+                    <span class="keyword">h</span>
+                    <span class="qubit-arg">&lt;qubit&gt;</span>
+                  </div>
+                </div>
+                <div class="instruction-description">
+                  <p>Applies Hadamard gate to specified qubit.</p>
+                </div>
+              </div>
+
+              <div class="instruction-section">
+                <div class="instruction-block">
+                  <div class="instruction-template">
+                    <span class="keyword">cnot</span>
+                    <span class="qubit-arg">&lt;control qubit&gt;</span>
+                    <span class="qubit-arg">&lt;target qubit&gt;</span>
+                  </div>
+                  <div class="instruction-template">
+                    <span class="keyword">c</span>
+                    <span class="qubit-arg">&lt;control qubit&gt;</span>
+                    <span class="qubit-arg">&lt;target qubit&gt;</span>
+                  </div>
+                </div>
+                <div class="instruction-description">
+                  <p>Applies CNOT gate to specified target qubit with specifil control qubit
+                  as the control.</p>
+                </div>
+              </div>
+
+              <div class="instruction-section">
+                <div class="instruction-block">
+                  <div class="instruction-template">
+                    <span class="keyword">phase</span>
+                    <span class="qubit-arg">&lt;qubit&gt;</span>
+                  </div>
+                  <div class="instruction-template">
+                    <span class="keyword">p</span>
+                    <span class="qubit-arg">&lt;qubit&gt;</span>
+                  </div>
+                </div>
+                <div class="instruction-description">
+                  <p>Applies a $\frac{\pi}{2}$ rotation about the $Z$-axis on the blochp-shere to the 
+                  specified qubit.</p>
+                </div>
+              </div>
+
+              <div class="instruction-section">
+                <div class="instruction-block">
+                  <div class="instruction-template">
+                    <span class="keyword">measure</span>
+                    <span class="qubit-arg">&lt;qubit&gt;</span>
+                    <span class="register-arg">&lt;register&gt;</span>
+                  </div>
+                  <div class="instruction-template">
+                    <span class="keyword">m</span>
+                    <span class="qubit-arg">&lt;qubit&gt;</span>
+                    <span class="register-arg">&lt;register&gt;</span>
+                  </div>
+                </div>
+                <div class="instruction-description">
+                  <p>Measures the specified qubits and writes the result to the specified
+                  register.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+
+    </div>
   </body>
 </html>
 

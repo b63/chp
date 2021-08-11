@@ -408,6 +408,15 @@ window.chp['main'] = (function() {
                     Output.enable_input(true);
                 }
                 break;
+            case 'help':
+                window.scrollTo({
+                    left: 0,
+                    top: document.querySelector('.text-content .center>section')
+                        .getBoundingClientRect().top + window.scrollY,
+                    behavior: 'smooth'
+                });
+                Output.enable_input(true);
+                break;
             default:
                 Output.add_to_output('error', 
                     {text: `Unkown command '${command}'`});
