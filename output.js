@@ -124,7 +124,6 @@ window.chp['output'] = (function() {
                 promise = MathJax.tex2svgPromise(item.text, options).then(
                     (svg) => {
                         item.node.innerHTML = '';
-                        svg.children[1].remove();
                         item.node.append(svg);
                     });
             } else {
@@ -132,7 +131,6 @@ window.chp['output'] = (function() {
                     () => MathJax.tex2svgPromise(item.text, options)
                 ).then((svg) => {
                         item.node.innerHTML = '';
-                        svg.children[1].remove();
                         item.node.append(svg);
                 });
             }
